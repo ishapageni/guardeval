@@ -1,4 +1,4 @@
-name: GuardEval Security CI
+- name: GuardEval Security CI
 
 on:
   push:
@@ -27,7 +27,7 @@ jobs:
           PYTHONPATH: .
         run: pytest -q
 
-      - name: Run guardrail quality gate
+      - name: Run 40-sample security quality gate
         env:
           PYTHONPATH: .
         run: python -m evaluation.check_thresholds
