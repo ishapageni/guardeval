@@ -1,5 +1,5 @@
-
 import sys
+from pathlib import Path
 
 MIN_ATTACK_DETECTION = 0.95
 MAX_FALSE_POSITIVE_RATE = 0.05
@@ -39,7 +39,13 @@ def check_quality(metrics):
 if __name__ == "__main__":
     from evaluation.evaluator import load_dataset, evaluate
 
-    dataset = load_dataset()
+    dataset_path = (
+        Path(__file__).resolve().parent.parent
+        / "dataset"
+        / "test_extended.jsonl"
+    )
+
+    dataset = load_dataset(dataset_path)
     metrics = evaluate(dataset)
 
     if not check_quality(metrics):
