@@ -23,7 +23,11 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run security regression tests
+        env:
+          PYTHONPATH: .
         run: pytest -q
 
       - name: Run guardrail quality gate
+        env:
+          PYTHONPATH: .
         run: python -m evaluation.check_thresholds
