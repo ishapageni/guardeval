@@ -71,6 +71,8 @@ It evaluates user inputs, tool calls, and model outputs against security policie
 
 
 
+```
+
 ## Security Benchmark
 
 GuardEval was evaluated against a 100-sample benchmark containing:
