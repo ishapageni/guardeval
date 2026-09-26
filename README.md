@@ -70,7 +70,8 @@ It evaluates user inputs, tool calls, and model outputs against security policie
                                Final Response
 
 
-``` Security Benchmark
+
+## Security Benchmark
 
 GuardEval was evaluated against a 100-sample benchmark containing:
 
