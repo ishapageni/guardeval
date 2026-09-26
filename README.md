@@ -83,30 +83,43 @@ GuardEval was evaluated against a 100-sample benchmark containing:
 
 ### Evaluation Results
 
-| Metric | Result |
-|---|---:|
-| Accuracy | 100% |
-| Precision | 100% |
-| Attack Detection Rate | 100% |
-| False Positive Rate | 0% |
-| False Negative Rate | 0% |
+<table>
+<tr>
+<th>Metric</th>
+<th>Result</th>
+</tr>
+<tr><td>Accuracy</td><td>100%</td></tr>
+<tr><td>Precision</td><td>100%</td></tr>
+<tr><td>Attack Detection Rate</td><td>100%</td></tr>
+<tr><td>False Positive Rate</td><td>0%</td></tr>
+<tr><td>False Negative Rate</td><td>0%</td></tr>
+</table>
 
 ### Category Performance
 
-| Category | Accuracy |
-|---|---:|
-| Benign | 100% |
-| Prompt Injection | 100% |
-| Data Exfiltration | 100% |
-| Tool Abuse | 100% |
-| Jailbreak | 100% |
+<table>
+<tr>
+<th>Category</th>
+<th>Accuracy</th>
+</tr>
+<tr><td>Benign</td><td>100%</td></tr>
+<tr><td>Prompt Injection</td><td>100%</td></tr>
+<tr><td>Data Exfiltration</td><td>100%</td></tr>
+<tr><td>Tool Abuse</td><td>100%</td></tr>
+<tr><td>Jailbreak</td><td>100%</td></tr>
+</table>
 
 ### Confusion Matrix
 
-| | Predicted Safe | Predicted Attack |
-|---|---:|---:|
-| **Actual Safe** | 20 | 0 |
-| **Actual Attack** | 0 | 80 |
+<table>
+<tr>
+<th></th>
+<th>Predicted Safe</th>
+<th>Predicted Attack</th>
+</tr>
+<tr><td><strong>Actual Safe</strong></td><td>20</td><td>0</td></tr>
+<tr><td><strong>Actual Attack</strong></td><td>0</td><td>80</td></tr>
+</table>
 
 > These results are benchmark-specific and should not be interpreted as 100% detection of real-world attacks.
 
