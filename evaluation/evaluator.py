@@ -165,4 +165,7 @@ def evaluate(dataset):
 
 if __name__ == "__main__":
     dataset = load_dataset()
-    evaluate(dataset)
+    results = evaluate(dataset)
+    with open("evaluation_report.json", "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=2, default=lambda x: x.item() if hasattr(x, "item") else x)
+    print("JSON report written to evaluation_report.json")
