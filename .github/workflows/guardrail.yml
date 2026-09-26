@@ -1,4 +1,4 @@
-- name: GuardEval Security CI
+ name: GuardEval Security CI
 
 on:
   push:
