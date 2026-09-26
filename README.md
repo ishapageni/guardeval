@@ -1,4 +1,5 @@
 # GuardEval
+[![GuardEval Security CI](https://github.com/ishapageni/guardeval/actions/workflows/guardrail.yml/badge.svg)](https://github.com/ishapageni/guardeval/actions/workflows/guardrail.yml)
 
 ### Automated LLM-Agent Guardrail Evaluation Framework
 
