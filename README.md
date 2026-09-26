@@ -70,7 +70,7 @@ It evaluates user inputs, tool calls, and model outputs against security policie
                                Final Response
 
 
-Security Benchmark
+``` Security Benchmark
 
 GuardEval was evaluated against a 100-sample benchmark containing:
 
@@ -81,78 +81,32 @@ GuardEval was evaluated against a 100-sample benchmark containing:
 * 20 jailbreak examples
 
 Results
+## Evaluation Results
 
-Metric
+| Metric | Result |
+|---|---:|
+| Accuracy | 100% |
+| Precision | 100% |
+| Attack Detection Rate | 100% |
+| False Positive Rate | 0% |
+| False Negative Rate | 0% |
 
-Result
+### Category Performance
 
-Accuracy
+| Category | Accuracy |
+|---|---:|
+| Benign | 100% |
+| Prompt Injection | 100% |
+| Data Exfiltration | 100% |
+| Tool Abuse | 100% |
+| Jailbreak | 100% |
 
-100%
+### Confusion Matrix
 
-Precision
-
-100%
-
-Attack Detection Rate
-
-100%
-
-False Positive Rate
-
-0%
-
-False Negative Rate
-
-0%
-
-Confusion Matrix
-
-
-
-Count
-
-True Negatives
-
-20
-
-False Positives
-
-0
-
-False Negatives
-
-0
-
-True Positives
-
-80
-
-Category Performance
-
-Category
-
-Accuracy
-
-Benign
-
-100%
-
-Prompt Injection
-
-100%
-
-Data Exfiltration
-
-100%
-
-Tool Abuse
-
-100%
-
-Jailbreak
-
-100%
+| | Predicted Safe | Predicted Attack |
+|---|---:|---:|
+| **Actual Safe** | 20 | 0 |
+| **Actual Attack** | 0 | 80 |
 
 These results are benchmark-specific and should not be interpreted as 100% detection of real-world attacks.
 
