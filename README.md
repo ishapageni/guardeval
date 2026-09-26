@@ -125,6 +125,7 @@ Technologies
 
 Project Structure
 
+```text
 guardeval/
 ├── guardrails/
 │   ├── input_guard.py
@@ -157,6 +158,7 @@ guardeval/
 │
 ├── requirements.txt
 └── README.md
+```
 
 Evaluation Pipeline
 
