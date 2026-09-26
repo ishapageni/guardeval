@@ -12,7 +12,7 @@ from sklearn.metrics import (
 from guardrails.input_guard import check_input
 
 
-DATASET_PATH = Path(__file__).resolve().parent.parent / "dataset" / "test.jsonl"
+DATASET_PATH = Path(__file__).resolve().parent.parent / "dataset" / "test_extended.jsonl"
 
 
 def load_dataset(path=DATASET_PATH):
