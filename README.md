@@ -75,14 +75,13 @@ It evaluates user inputs, tool calls, and model outputs against security policie
 
 GuardEval was evaluated against a 100-sample benchmark containing:
 
-* 20 benign prompts
-* 20 prompt-injection examples
-* 20 data-exfiltration examples
-* 20 tool-abuse examples
-* 20 jailbreak examples
+- 20 benign prompts
+- 20 prompt-injection examples
+- 20 data-exfiltration examples
+- 20 tool-abuse examples
+- 20 jailbreak examples
 
-Results
-## Evaluation Results
+### Evaluation Results
 
 | Metric | Result |
 |---|---:|
@@ -109,7 +108,7 @@ Results
 | **Actual Safe** | 20 | 0 |
 | **Actual Attack** | 0 | 80 |
 
-These results are benchmark-specific and should not be interpreted as 100% detection of real-world attacks.
+> These results are benchmark-specific and should not be interpreted as 100% detection of real-world attacks.
 
 Technologies
 
