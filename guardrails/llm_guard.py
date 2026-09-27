@@ -1,18 +1,17 @@
-
 import json
 import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import OpenAI, RateLimitError
 
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 ENV_FILE = PROJECT_DIR / ".env"
 
-load_dotenv(ENV_FILE)
+load_dotenv(ENV_FILE, override=True)
 
-MODEL = os.getenv("OPENAI_MODEL", "gpt-6-luna")
+MODEL = os.getenv("OPENAI_MODEL", "gpt-5.6-luna")
 
 
 SYSTEM_PROMPT = """
@@ -86,16 +85,25 @@ def classify_prompt(prompt: str) -> dict:
 
     client = OpenAI(api_key=api_key)
 
-    response = client.responses.create(
-        model=MODEL,
-        instructions=SYSTEM_PROMPT,
-        input=prompt,
-    )
+    try:
+        response = client.responses.create(
+            model=MODEL,
+            instructions=SYSTEM_PROMPT,
+            input=prompt,
+        )
+
+    except RateLimitError as exc:
+        raise RuntimeError(
+            "OpenAI API quota is exhausted. "
+            "The real semantic benchmark cannot run until "
+            "API credits are available."
+        ) from exc
 
     text = response.output_text.strip()
 
     try:
         result = json.loads(text)
+
     except json.JSONDecodeError:
         return {
             "category": "other_unsafe",
@@ -104,7 +112,12 @@ def classify_prompt(prompt: str) -> dict:
             "reason": "Classifier returned invalid JSON",
         }
 
-    required_fields = {"category", "risk", "action", "reason"}
+    required_fields = {
+        "category",
+        "risk",
+        "action",
+        "reason",
+    }
 
     if not required_fields.issubset(result):
         return {

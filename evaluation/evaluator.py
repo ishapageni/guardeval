@@ -6,6 +6,7 @@ from sklearn.metrics import (
     accuracy_score,
     precision_score,
     recall_score,
+    f1_score,
     confusion_matrix,
 )
 
@@ -26,11 +27,18 @@ def load_dataset(path=DATASET_PATH):
     samples = []
 
     with open(path, "r", encoding="utf-8") as f:
-        for line in f:
+        for line_number, line in enumerate(f, start=1):
             line = line.strip()
 
-            if line:
+            if not line:
+                continue
+
+            try:
                 samples.append(json.loads(line))
+            except json.JSONDecodeError as exc:
+                raise ValueError(
+                    f"Invalid JSON in {path} at line {line_number}: {exc}"
+                ) from exc
 
     return samples
 
@@ -40,22 +48,16 @@ def evaluate(dataset):
     y_pred = []
 
     category_results = {}
-
     method_counts = {}
 
     for sample in dataset:
-
         prompt = sample["prompt"]
 
-        # IMPORTANT:
-        # Evaluate the complete hybrid input guard,
-        # not the regex layer directly.
+        # Evaluate the complete hybrid guard.
         result = hybrid_check(prompt)
 
         expected_action = sample["expected_action"]
-
-        # "review" is treated as unsafe for binary security evaluation.
-        actual_action = result["policy_action"]
+        actual_action = result["action"]
 
         expected_label = (
             1 if expected_action != "allow" else 0
@@ -68,14 +70,17 @@ def evaluate(dataset):
         y_true.append(expected_label)
         y_pred.append(actual_label)
 
-        # Track which guard layer actually produced the decision.
+        # Track which layer produced the decision.
         method = result.get("method", "unknown")
 
         method_counts[method] = (
             method_counts.get(method, 0) + 1
         )
 
+        # ---------------------------------------------
         # Category-level evaluation
+        # ---------------------------------------------
+
         category = sample["category"]
 
         if category not in category_results:
@@ -117,6 +122,12 @@ def evaluate(dataset):
         zero_division=0,
     )
 
+    f1 = f1_score(
+        y_true,
+        y_pred,
+        zero_division=0,
+    )
+
     tn, fp, fn, tp = confusion_matrix(
         y_true,
         y_pred,
@@ -142,7 +153,7 @@ def evaluate(dataset):
     )
 
     # ---------------------------------------------
-    # Output
+    # Print results
     # ---------------------------------------------
 
     print("=" * 60)
@@ -151,13 +162,20 @@ def evaluate(dataset):
 
     print(f"Dataset:                 {DATASET_PATH}")
     print(f"Total samples:           {len(dataset)}")
-    print(f"LLM mode:                {os.getenv('GUARDEVAL_LLM_MODE', 'mock')}")
-    print(f"LLM model:               {os.getenv('OPENAI_MODEL', 'gpt-6-luna')}")
+    print(
+        f"LLM mode:                "
+        f"{os.getenv('GUARDEVAL_LLM_MODE', 'mock')}"
+    )
+    print(
+        f"LLM model:               "
+        f"{os.getenv('OPENAI_MODEL', 'gpt-5.6-luna')}"
+    )
 
     print()
     print(f"Accuracy:                {accuracy:.2%}")
     print(f"Precision:               {precision:.2%}")
     print(f"Attack detection rate:   {recall:.2%}")
+    print(f"F1 score:                {f1:.2%}")
     print(f"False positive rate:     {false_positive_rate:.2%}")
     print(f"False negative rate:     {false_negative_rate:.2%}")
     print(f"Specificity:             {specificity:.2%}")
@@ -170,7 +188,7 @@ def evaluate(dataset):
         percentage = count / len(dataset)
 
         print(
-            f"{method:20s} "
+            f"{method:20s}"
             f"{count:4d} "
             f"({percentage:.2%})"
         )
@@ -178,6 +196,7 @@ def evaluate(dataset):
     print()
     print("Confusion Matrix")
     print("-" * 40)
+
     print(f"True Negatives:    {tn}")
     print(f"False Positives:   {fp}")
     print(f"False Negatives:   {fn}")
@@ -188,7 +207,6 @@ def evaluate(dataset):
     print("-" * 60)
 
     for category, stats in category_results.items():
-
         category_accuracy = (
             stats["correct"] / stats["total"]
             if stats["total"]
@@ -196,7 +214,7 @@ def evaluate(dataset):
         )
 
         print(
-            f"{category:25s} "
+            f"{category:25s}"
             f"{category_accuracy:.2%}"
         )
 
@@ -209,6 +227,7 @@ def evaluate(dataset):
         "accuracy": accuracy,
         "precision": precision,
         "recall": recall,
+        "f1": f1,
 
         "false_positive_rate": false_positive_rate,
         "false_negative_rate": false_negative_rate,
@@ -229,14 +248,13 @@ def evaluate(dataset):
             ),
             "model": os.getenv(
                 "OPENAI_MODEL",
-                "gpt-6-luna",
+                "gpt-5.6-luna",
             ),
         },
     }
 
 
 if __name__ == "__main__":
-
     dataset = load_dataset()
 
     results = evaluate(dataset)
@@ -248,7 +266,6 @@ if __name__ == "__main__":
         "w",
         encoding="utf-8",
     ) as f:
-
         json.dump(
             results,
             f,

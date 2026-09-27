@@ -1,12 +1,41 @@
 import os
 
 from guardrails.input_guard import check_input
-from guardrails.llm_guard import classify_prompt as classify_real_prompt
 from guardrails.mock_llm_guard import classify_prompt as classify_mock_prompt
 from guardrails.policy import apply_risk_policy
 
 
 LLM_MODE = os.getenv("GUARDEVAL_LLM_MODE", "mock").lower()
+
+
+def _classify_semantically(prompt: str) -> dict:
+    """
+    Select the semantic guard implementation.
+
+    mock:
+        Deterministic local classifier for tests/CI.
+
+    real:
+        OpenAI-backed semantic classifier.
+    """
+
+    if LLM_MODE == "mock":
+        result = classify_mock_prompt(prompt)
+        result["method"] = "mock_llm"
+        return result
+
+    if LLM_MODE == "real":
+        # Lazy import keeps mock/CI mode independent of OpenAI credentials.
+        from guardrails.llm_guard import classify_prompt
+
+        result = classify_prompt(prompt)
+        result["method"] = "llm"
+        return result
+
+    raise ValueError(
+        "GUARDEVAL_LLM_MODE must be either 'real' or 'mock'. "
+        f"Got: {LLM_MODE!r}"
+    )
 
 
 def hybrid_check(prompt: str) -> dict:
@@ -33,24 +62,19 @@ def hybrid_check(prompt: str) -> dict:
     # Layer 2: semantic guard
     # ---------------------------------------------
 
-    if LLM_MODE == "real":
-        semantic_result = classify_real_prompt(prompt)
-        semantic_method = "llm"
-    elif LLM_MODE == "mock":
-        semantic_result = classify_mock_prompt(prompt)
-        semantic_method = "mock_llm"
-    else:
-        raise ValueError(
-            "GUARDEVAL_LLM_MODE must be either 'real' or 'mock'."
-        )
+    semantic_result = _classify_semantically(prompt)
 
     result = {
         "action": semantic_result["action"],
         "risk": semantic_result["risk"],
         "category": semantic_result["category"],
         "reason": semantic_result["reason"],
-        "method": semantic_method,
-        "layers": ["rules", semantic_method, "policy"],
+        "method": semantic_result["method"],
+        "layers": [
+            "rules",
+            semantic_result["method"],
+            "policy",
+        ],
     }
 
     return apply_risk_policy(result)
