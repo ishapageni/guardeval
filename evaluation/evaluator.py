@@ -1,5 +1,5 @@
-
 import json
+import os
 from pathlib import Path
 
 from sklearn.metrics import (
@@ -9,10 +9,17 @@ from sklearn.metrics import (
     confusion_matrix,
 )
 
-from guardrails.input_guard import check_input
+from guardrails.hybrid_guard import hybrid_check
 
 
-DATASET_PATH = Path(__file__).resolve().parent.parent / "dataset" / "test_extended.jsonl"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+DATASET_PATH = Path(
+    os.getenv(
+        "GUARDEVAL_DATASET",
+        PROJECT_ROOT / "dataset" / "test_extended.jsonl",
+    )
+)
 
 
 def load_dataset(path=DATASET_PATH):
@@ -20,7 +27,10 @@ def load_dataset(path=DATASET_PATH):
 
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
-            samples.append(json.loads(line))
+            line = line.strip()
+
+            if line:
+                samples.append(json.loads(line))
 
     return samples
 
@@ -31,30 +41,39 @@ def evaluate(dataset):
 
     category_results = {}
 
+    method_counts = {}
+
     for sample in dataset:
 
         prompt = sample["prompt"]
 
-        # Run our guardrail
-        result = check_input(prompt)
+        # IMPORTANT:
+        # Evaluate the complete hybrid input guard,
+        # not the regex layer directly.
+        result = hybrid_check(prompt)
 
         expected_action = sample["expected_action"]
-        actual_action = result["action"]
 
-        # Convert:
-        # allow = 0
-        # block = 1
+        # "review" is treated as unsafe for binary security evaluation.
+        actual_action = result["policy_action"]
 
         expected_label = (
-            1 if expected_action == "block" else 0
+            1 if expected_action != "allow" else 0
         )
 
         actual_label = (
-            1 if actual_action == "block" else 0
+            1 if actual_action != "allow" else 0
         )
 
         y_true.append(expected_label)
         y_pred.append(actual_label)
+
+        # Track which guard layer actually produced the decision.
+        method = result.get("method", "unknown")
+
+        method_counts[method] = (
+            method_counts.get(method, 0) + 1
+        )
 
         # Category-level evaluation
         category = sample["category"]
@@ -67,18 +86,22 @@ def evaluate(dataset):
                 "false_positives": 0,
             }
 
-        category_results[category]["total"] += 1
+        stats = category_results[category]
+
+        stats["total"] += 1
 
         if expected_label == actual_label:
-            category_results[category]["correct"] += 1
+            stats["correct"] += 1
 
         if expected_label == 1 and actual_label == 0:
-            category_results[category]["false_negatives"] += 1
+            stats["false_negatives"] += 1
 
         if expected_label == 0 and actual_label == 1:
-            category_results[category]["false_positives"] += 1
+            stats["false_positives"] += 1
 
+    # ---------------------------------------------
     # Overall metrics
+    # ---------------------------------------------
 
     accuracy = accuracy_score(y_true, y_pred)
 
@@ -112,60 +135,131 @@ def evaluate(dataset):
         else 0
     )
 
-    # Print results
+    specificity = (
+        tn / (tn + fp)
+        if (tn + fp) > 0
+        else 0
+    )
 
-    print("=" * 50)
-    print("GUARDEVAL - GUARDRAIL EVALUATION")
-    print("=" * 50)
+    # ---------------------------------------------
+    # Output
+    # ---------------------------------------------
 
-    print(f"Total samples:          {len(dataset)}")
-    print(f"Accuracy:               {accuracy:.2%}")
-    print(f"Precision:              {precision:.2%}")
-    print(f"Attack detection rate:  {recall:.2%}")
-    print(f"False positive rate:    {false_positive_rate:.2%}")
-    print(f"False negative rate:    {false_negative_rate:.2%}")
+    print("=" * 60)
+    print("GUARDEVAL - HYBRID GUARD EVALUATION")
+    print("=" * 60)
 
-    print("\nConfusion Matrix")
-    print("-" * 30)
+    print(f"Dataset:                 {DATASET_PATH}")
+    print(f"Total samples:           {len(dataset)}")
+    print(f"LLM mode:                {os.getenv('GUARDEVAL_LLM_MODE', 'mock')}")
+    print(f"LLM model:               {os.getenv('OPENAI_MODEL', 'gpt-6-luna')}")
 
-    print(f"True Negatives:   {tn}")
-    print(f"False Positives:  {fp}")
-    print(f"False Negatives:  {fn}")
-    print(f"True Positives:   {tp}")
+    print()
+    print(f"Accuracy:                {accuracy:.2%}")
+    print(f"Precision:               {precision:.2%}")
+    print(f"Attack detection rate:   {recall:.2%}")
+    print(f"False positive rate:     {false_positive_rate:.2%}")
+    print(f"False negative rate:     {false_negative_rate:.2%}")
+    print(f"Specificity:             {specificity:.2%}")
 
-    print("\nCategory Performance")
-    print("-" * 50)
+    print()
+    print("Decision Method Coverage")
+    print("-" * 40)
+
+    for method, count in sorted(method_counts.items()):
+        percentage = count / len(dataset)
+
+        print(
+            f"{method:20s} "
+            f"{count:4d} "
+            f"({percentage:.2%})"
+        )
+
+    print()
+    print("Confusion Matrix")
+    print("-" * 40)
+    print(f"True Negatives:    {tn}")
+    print(f"False Positives:   {fp}")
+    print(f"False Negatives:   {fn}")
+    print(f"True Positives:    {tp}")
+
+    print()
+    print("Category Performance")
+    print("-" * 60)
 
     for category, stats in category_results.items():
 
         category_accuracy = (
             stats["correct"] / stats["total"]
+            if stats["total"]
+            else 0
         )
 
         print(
-            f"{category:22s} "
+            f"{category:25s} "
             f"{category_accuracy:.2%}"
         )
 
-    print("=" * 50)
+    print("=" * 60)
 
     return {
+        "dataset": str(DATASET_PATH),
+        "total_samples": len(dataset),
+
         "accuracy": accuracy,
         "precision": precision,
         "recall": recall,
+
         "false_positive_rate": false_positive_rate,
         "false_negative_rate": false_negative_rate,
+        "specificity": specificity,
+
         "true_negatives": tn,
         "false_positives": fp,
         "false_negatives": fn,
         "true_positives": tp,
+
         "category_results": category_results,
+        "method_counts": method_counts,
+
+        "configuration": {
+            "llm_mode": os.getenv(
+                "GUARDEVAL_LLM_MODE",
+                "mock",
+            ),
+            "model": os.getenv(
+                "OPENAI_MODEL",
+                "gpt-6-luna",
+            ),
+        },
     }
 
 
 if __name__ == "__main__":
+
     dataset = load_dataset()
+
     results = evaluate(dataset)
-    with open("evaluation_report.json", "w", encoding="utf-8") as f:
-        json.dump(results, f, indent=2, default=lambda x: x.item() if hasattr(x, "item") else x)
-    print("JSON report written to evaluation_report.json")
+
+    report_path = PROJECT_ROOT / "evaluation_report.json"
+
+    with open(
+        report_path,
+        "w",
+        encoding="utf-8",
+    ) as f:
+
+        json.dump(
+            results,
+            f,
+            indent=2,
+            default=lambda x: (
+                x.item()
+                if hasattr(x, "item")
+                else x
+            ),
+        )
+
+    print(
+        f"\nJSON report written to {report_path}"
+    )
