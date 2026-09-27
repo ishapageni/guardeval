@@ -191,19 +191,35 @@ Maximum false positive rate: 5%
 
 A build fails if these security thresholds are not satisfied.
 
-Dashboard
+## Dashboard
 
 GuardEval includes a Streamlit dashboard for visualizing:
 
-* Evaluation metrics
-* Confusion matrix
-* Category performance
-* Security benchmark results
-Run locally with:streamlit run dashboard/app.py
+- Evaluation metrics
+- Confusion matrix
+- Category performance
+- Security benchmark results
 
-Then open:http://localhost:8501
+### Live Dashboard
 
-Testing
+[Open the GuardEval Security Dashboard](https://ishapageni-guardeval-dashboardapp-mbstvj.streamlit.app/)
+
+### Run Locally
+
+To run the dashboard locally:
+
+```bash
+streamlit run dashboard/app.py
+```
+
+Then open:
+
+```text
+http://localhost:8501
+```
+
+
+##Testing
 
 Run the automated test suite:pytest -q
 
