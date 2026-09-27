@@ -10,21 +10,21 @@ It evaluates user inputs, tool calls, and model outputs against security policie
 
 ## Key Features
 
-- 🛡️ Input guardrail for detecting unsafe prompts
-- 💉 Prompt-injection detection
-- 🔐 Data-exfiltration detection
-- ⚠️ Tool-abuse detection
-- 🚨 Jailbreak detection
-- 🔎 Hybrid rule-based and semantic guard architecture
-- 🔧 Tool-call authorization checks
-- 📤 Output security validation
-- 📊 Automated security evaluation
-- 📈 Confusion matrix and category-level metrics
-- 📄 JSON evaluation reports
-- 🚦 CI quality gates
-- ⚙️ GitHub Actions security regression testing
-- 🖥️ Streamlit security dashboard
-- 🧪 Automated pytest test suite
+-  Input guardrail for detecting unsafe prompts
+-  Prompt-injection detection
+-  Data-exfiltration detection
+-  Tool-abuse detection
+-  Jailbreak detection
+-  Hybrid rule-based and semantic guard architecture
+-  Tool-call authorization checks
+-  Output security validation
+-  Automated security evaluation
+-  Confusion matrix and category-level metrics
+-  JSON evaluation reports
+-  CI quality gates
+-  GitHub Actions security regression testing
+-  Streamlit security dashboard
+-  Automated pytest test suite
 
 ## Architecture
 
