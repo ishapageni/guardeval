@@ -1,76 +1,76 @@
 {
-  "dataset": "dataset/test_realistic_95_5_400.jsonl",
-  "total_samples": 400,
-  "accuracy": 1.0,
+  "dataset": "dataset/test_holdout_200.jsonl",
+  "total_samples": 200,
+  "accuracy": 0.98,
   "precision": 1.0,
-  "recall": 1.0,
-  "f1": 1.0,
+  "recall": 0.8,
+  "f1": 0.8888888888888888,
   "false_positive_rate": 0.0,
-  "false_negative_rate": 0.0,
+  "false_negative_rate": 0.2,
   "specificity": 1.0,
-  "true_negatives": 380,
+  "true_negatives": 180,
   "false_positives": 0,
-  "false_negatives": 0,
-  "true_positives": 20,
+  "false_negatives": 4,
+  "true_positives": 16,
   "category_results": {
     "general_knowledge": {
-      "total": 50,
-      "correct": 50,
-      "false_negatives": 0,
-      "false_positives": 0
-    },
-    "programming": {
-      "total": 50,
-      "correct": 50,
-      "false_negatives": 0,
-      "false_positives": 0
-    },
-    "math_science": {
-      "total": 50,
-      "correct": 50,
-      "false_negatives": 0,
-      "false_positives": 0
-    },
-    "writing": {
-      "total": 50,
-      "correct": 50,
-      "false_negatives": 0,
-      "false_positives": 0
-    },
-    "productivity": {
-      "total": 50,
-      "correct": 50,
-      "false_negatives": 0,
-      "false_positives": 0
-    },
-    "data_analysis": {
-      "total": 50,
-      "correct": 50,
-      "false_negatives": 0,
-      "false_positives": 0
-    },
-    "system_admin": {
-      "total": 50,
-      "correct": 50,
-      "false_negatives": 0,
-      "false_positives": 0
-    },
-    "security_education": {
       "total": 30,
       "correct": 30,
       "false_negatives": 0,
       "false_positives": 0
     },
+    "programming": {
+      "total": 30,
+      "correct": 30,
+      "false_negatives": 0,
+      "false_positives": 0
+    },
+    "math_science": {
+      "total": 20,
+      "correct": 20,
+      "false_negatives": 0,
+      "false_positives": 0
+    },
+    "writing": {
+      "total": 20,
+      "correct": 20,
+      "false_negatives": 0,
+      "false_positives": 0
+    },
+    "productivity": {
+      "total": 20,
+      "correct": 20,
+      "false_negatives": 0,
+      "false_positives": 0
+    },
+    "data_analysis": {
+      "total": 20,
+      "correct": 20,
+      "false_negatives": 0,
+      "false_positives": 0
+    },
+    "system_admin": {
+      "total": 20,
+      "correct": 20,
+      "false_negatives": 0,
+      "false_positives": 0
+    },
+    "security_education": {
+      "total": 20,
+      "correct": 20,
+      "false_negatives": 0,
+      "false_positives": 0
+    },
     "prompt_injection": {
       "total": 4,
-      "correct": 4,
-      "false_negatives": 0,
+      "correct": 2,
+      "false_negatives": 2,
       "false_positives": 0
     },
     "data_exfiltration": {
       "total": 4,
-      "correct": 4,
-      "false_negatives": 0,
+      "correct": 3,
+      "false_negatives": 1,
       "false_positives": 0
     },
     "tool_abuse": {
@@ -87,14 +87,14 @@
     },
     "malicious_code": {
       "total": 4,
-      "correct": 4,
-      "false_negatives": 0,
+      "correct": 3,
+      "false_negatives": 1,
       "false_positives": 0
     }
   },
   "method_counts": {
-    "mock_llm": 393,
-    "rules": 7
+    "mock_llm": 191,
+    "rules": 9
   },
   "configuration": {
     "llm_mode": "mock",
