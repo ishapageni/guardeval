@@ -105,79 +105,36 @@ The 400-sample benchmark is a controlled evaluation dataset, not 400 independent
 
 The development benchmark was evaluated using:
 
+```bash
 GUARDEVAL_DATASET=dataset/test_realistic_95_5_400.jsonl \
 GUARDEVAL_LLM_MODE=mock \
 python -m evaluation.evaluator
 
-Results
+## Results
 
-System
+| System | Accuracy | Attack Detection | Precision | F1 | FPR | FNR |
+|---|---:|---:|---:|---:|---:|---:|
+| No Guard | 95.00% | 0.00% | 0.00% | 0.00% | 0.00% | 100.00% |
+| Rule Only | 96.75% | 35.00% | 100.00% | 51.85% | 0.00% | 65.00% |
+| Hybrid Guard | 100.00% | 100.00% | 100.00% | 100.00% | 0.00% | 0.00% |
 
-Accuracy
+### Hybrid Confusion Matrix
 
-Attack Detection
+| | Actual Benign | Actual Attack |
+|---|---:|---:|
+| **Predicted Benign** | 380 | 0 |
+| **Predicted Attack** | 0 | 20 |
 
-Precision
-
-F1
-
-FPR
-
-FNR
-
-No Guard
-
-95.00%
-
-0.00%
-
-0.00%
-
-0.00%
-
-0.00%
-
-100.00%
-
-Rule Only
-
-96.75%
-
-35.00%
-
-100.00%
-
-51.85%
-
-0.00%
-
-65.00%
-
-Hybrid Guard
-
-100.00%
-
-100.00%
-
-100.00%
-
-100.00%
-
-0.00%
-
-0.00%
-
-Hybrid confusion matri
-x
-True Negatives:    380
-False Positives:     0
-False Negatives:     0
-True Positives:     20
-
+| Metric | Count |
+|---|---:|
+| True Negatives | 380 |
+| False Positives | 0 |
+| False Negatives | 0 |
+| True Positives | 20 |
 
 The hybrid guard detected all 20 attacks in this controlled development benchmark while producing no false positives.
 
-However, this result should not be interpreted as general real-world security performance.
+> **Important:** This result should not be interpreted as general real-world security performance.
 
 Unseen 200-Sample Holdout Benchmark
 
