@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 
 from sklearn.metrics import (
@@ -15,24 +16,23 @@ from guardrails.hybrid_guard import hybrid_check
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-DATASET_PATH = (
-    PROJECT_ROOT
-    / "dataset"
-    / "test_extended.jsonl"
+DATASET_PATH = Path(
+    os.getenv(
+        "GUARDEVAL_DATASET",
+        PROJECT_ROOT
+        / "dataset"
+        / "test_realistic_95_5_adversarial.jsonl",
+    )
 )
 
 
-def load_dataset():
-    samples = []
-
-    with open(DATASET_PATH, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-
-            if line:
-                samples.append(json.loads(line))
-
-    return samples
+def load_dataset(path):
+    with open(path, "r", encoding="utf-8") as f:
+        return [
+            json.loads(line)
+            for line in f
+            if line.strip()
+        ]
 
 
 def calculate_metrics(y_true, y_pred):
@@ -59,162 +59,161 @@ def calculate_metrics(y_true, y_pred):
         labels=[0, 1],
     ).ravel()
 
-    fpr = (
-        fp / (fp + tn)
-        if (fp + tn) > 0
-        else 0
-    )
+    fpr = fp / (fp + tn) if (fp + tn) else 0
+    fnr = fn / (fn + tp) if (fn + tp) else 0
 
     return {
         "accuracy": accuracy,
         "precision": precision,
         "recall": recall,
         "f1": f1,
-        "false_positive_rate": fpr,
-        "true_negatives": tn,
-        "false_positives": fp,
-        "false_negatives": fn,
-        "true_positives": tp,
+        "fpr": fpr,
+        "fnr": fnr,
+        "tn": tn,
+        "fp": fp,
+        "fn": fn,
+        "tp": tp,
     }
 
 
-def no_guard(prompt):
-    # Baseline: every request is allowed.
-    return "allow"
+def evaluate_no_guard(dataset):
+    """
+    Baseline 1:
+    No security guard.
 
+    Every request is allowed.
+    """
 
-def regex_guard(prompt):
-    result = check_input(prompt)
-    return result["action"]
-
-
-def hybrid_guard(prompt):
-    result = hybrid_check(prompt)
-    return result["action"]
-
-
-def evaluate_system(name, classifier, dataset):
     y_true = []
     y_pred = []
 
     for sample in dataset:
-        expected = sample["expected_action"]
-
-        expected_label = (
-            1
-            if expected != "allow"
-            else 0
+        expected = (
+            1 if sample["expected_action"] != "allow" else 0
         )
 
-        actual = classifier(sample["prompt"])
+        y_true.append(expected)
+        y_pred.append(0)
 
-        actual_label = (
-            1
-            if actual != "allow"
-            else 0
+    return calculate_metrics(y_true, y_pred)
+
+
+def evaluate_rule_only(dataset):
+    """
+    Baseline 2:
+    Deterministic rule guard only.
+    """
+
+    y_true = []
+    y_pred = []
+
+    for sample in dataset:
+        result = check_input(sample["prompt"])
+
+        expected = (
+            1 if sample["expected_action"] != "allow" else 0
         )
 
-        y_true.append(expected_label)
-        y_pred.append(actual_label)
+        actual = (
+            1 if result["action"] != "allow" else 0
+        )
 
-    metrics = calculate_metrics(
-        y_true,
-        y_pred,
-    )
+        y_true.append(expected)
+        y_pred.append(actual)
 
+    return calculate_metrics(y_true, y_pred)
+
+
+def evaluate_hybrid(dataset):
+    """
+    System under evaluation:
+    deterministic rules + semantic guard.
+    """
+
+    y_true = []
+    y_pred = []
+
+    for sample in dataset:
+        result = hybrid_check(sample["prompt"])
+
+        expected = (
+            1 if sample["expected_action"] != "allow" else 0
+        )
+
+        actual = (
+            1 if result["action"] != "allow" else 0
+        )
+
+        y_true.append(expected)
+        y_pred.append(actual)
+
+    return calculate_metrics(y_true, y_pred)
+
+
+def print_result(name, result):
     print()
-    print("=" * 60)
     print(name)
-    print("=" * 60)
+    print("-" * 60)
 
-    print(
-        f"Accuracy:              "
-        f"{metrics['accuracy']:.2%}"
-    )
-
-    print(
-        f"Precision:             "
-        f"{metrics['precision']:.2%}"
-    )
-
-    print(
-        f"Attack detection:      "
-        f"{metrics['recall']:.2%}"
-    )
-
-    print(
-        f"F1 score:              "
-        f"{metrics['f1']:.2%}"
-    )
-
-    print(
-        f"False positive rate:   "
-        f"{metrics['false_positive_rate']:.2%}"
-    )
+    print(f"Accuracy:              {result['accuracy']:.2%}")
+    print(f"Precision:             {result['precision']:.2%}")
+    print(f"Attack detection:      {result['recall']:.2%}")
+    print(f"F1:                    {result['f1']:.2%}")
+    print(f"False positive rate:   {result['fpr']:.2%}")
+    print(f"False negative rate:   {result['fnr']:.2%}")
 
     print()
-    print("Confusion Matrix")
     print(
-        f"TN={metrics['true_negatives']} "
-        f"FP={metrics['false_positives']} "
-        f"FN={metrics['false_negatives']} "
-        f"TP={metrics['true_positives']}"
+        f"TN={result['tn']}  "
+        f"FP={result['fp']}  "
+        f"FN={result['fn']}  "
+        f"TP={result['tp']}"
     )
 
-    return metrics
 
-
-if __name__ == "__main__":
-    dataset = load_dataset()
+def main():
+    dataset = load_dataset(DATASET_PATH)
 
     print("=" * 60)
     print("GUARDEVAL - BASELINE COMPARISON")
     print("=" * 60)
     print(f"Dataset: {DATASET_PATH}")
     print(f"Samples: {len(dataset)}")
+    print("LLM mode:", os.getenv("GUARDEVAL_LLM_MODE", "mock"))
 
-    no_guard_metrics = evaluate_system(
-        "1. NO GUARD",
-        no_guard,
-        dataset,
-    )
+    results = {
+        "No Guard": evaluate_no_guard(dataset),
+        "Rule Only": evaluate_rule_only(dataset),
+        "Hybrid": evaluate_hybrid(dataset),
+    }
 
-    regex_metrics = evaluate_system(
-        "2. REGEX-ONLY GUARD",
-        regex_guard,
-        dataset,
-    )
-
-    hybrid_metrics = evaluate_system(
-        "3. HYBRID GUARD (MOCK SEMANTIC)",
-        hybrid_guard,
-        dataset,
-    )
+    for name, result in results.items():
+        print_result(name, result)
 
     print()
     print("=" * 60)
-    print("SUMMARY")
+    print("COMPARISON")
     print("=" * 60)
 
     print(
-        f"{'System':35s}"
-        f"{'Accuracy':>12s}"
-        f"{'Detection':>12s}"
-        f"{'FPR':>10s}"
-        f"{'F1':>10s}"
+        f"{'Method':<15}"
+        f"{'Accuracy':>12}"
+        f"{'Recall':>12}"
+        f"{'F1':>12}"
+        f"{'FNR':>12}"
     )
 
-    print("-" * 80)
+    print("-" * 60)
 
-    for name, metrics in [
-        ("No guard", no_guard_metrics),
-        ("Regex-only", regex_metrics),
-        ("Hybrid mock", hybrid_metrics),
-    ]:
+    for name, result in results.items():
         print(
-            f"{name:35s}"
-            f"{metrics['accuracy']:>11.2%}"
-            f"{metrics['recall']:>11.2%}"
-            f"{metrics['false_positive_rate']:>9.2%}"
-            f"{metrics['f1']:>9.2%}"
+            f"{name:<15}"
+            f"{result['accuracy']:>11.2%}"
+            f"{result['recall']:>11.2%}"
+            f"{result['f1']:>11.2%}"
+            f"{result['fnr']:>11.2%}"
         )
+
+
+if __name__ == "__main__":
+    main()
